@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Pixel Canvas Scale Tester</title>
+	<style>
+		body {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			font-size: 12px;
+			font-family: sans-serif;
+			background-color: dimgray;
+			color: whitesmoke;
+		}
+
+		div {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+			position: relative;
+			background: black;
+			color: white;
+			margin: 5px;
+			border: 1px solid darkgray;
+		}
+
+		div::before {
+			position: absolute;
+			left: 0;
+			top: 0;
+			content: attr(title);
+		}
+
+		span {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+
+			background-color: dimgray;
+			background-image: linear-gradient(45deg, gray 25%, transparent 25%), linear-gradient(-45deg, gray 25%, transparent 25%), linear-gradient(45deg, transparent 74%, gray 74%), linear-gradient(-45deg, transparent 74%, gray 74%);
+		}
+
+		section {
+			width: 300px;
+		}
+
+		input {
+			width: 50px;
+		}
+	</style>
+</head>
+
+<body>
+	<section>
+		<h1>Pixel Canvas Scale Tester</h1>
+		<label>Width&nbsp;<input id="width" type="number" min="1" value="320"></label>
+		<label>Height&nbsp;<input id="height" type="number" min="1" value="180"></label>
+		<table id="info"></table>
+		<p>Market share data is from the Steam Hardware Survey as of December 2018.</p>
+		<button onclick="changeScale(0.5)">Smaller Windows</button><button onclick="changeScale(2)">Bigger Windows</button>
+	</section>
+	<script>
+		let SCALE_FACTOR = 0.25
+
+		let infoTable = document.getElementById('info')
+		let widthInput = document.getElementById('width')
+		let heightInput = document.getElementById('height')
+
+		let resolutions = [
+			[1920, 1080, 60.74],
+			[1366, 768, 13.91],
+			[2560, 1440, 3.87],
+			[1440, 900, 3.62],
+			[1600, 900, 3.59],
+			[1680, 1050, 2.64],
+			[1280, 1024, 2.10],
+			[1360, 768, 1.90],
+			[3840, 2160, 1.45],
+			[1920, 1200, 0.96],
+			[2560, 1080, 0.95],
+			[1280, 800, 0.86],
+			[1024, 768, 0.63],
+			[3440, 1440, 0.46],
+			[1280, 720, 0.41],
+			[1536, 864, 0.27],
+		]
+
+		let consoles = [
+			['NES/SNES', 256, 240],
+			['GB/GBC', 160, 144],
+			['GBA', 240, 160],
+			['Game Gear', 160, 144],
+			['Master System', 256, 192],
+			['Genesis', 256, 224],
+			['DS', 256, 192],
+			['3DS (Upper)', 400, 240],
+			['3DS (Lower)', 320, 240]
+		]
+
+		let w = 320
+		let h = 180
+
+		widthInput.addEventListener('input', e => refresh())
+		heightInput.addEventListener('input', e => refresh())
+
+		function changeScale(n) {
+			SCALE_FACTOR = SCALE_FACTOR * n
+			refresh()
+		}
+
+		function clip(n) {
+			return Math.round(n * 1000) / 1000
+		}
+
+		function refresh() {
+			w = parseInt(widthInput.value, 10)
+			h = parseInt(heightInput.value, 10)
+
+			infoTable.innerHTML = `<tr><th>Console</th><th>Resolution</th><th>8x8 Tiles</th><th>16x16 Tiles</th></tr>`
+			infoTable.innerHTML += `<tr><td><i>Your Canvas</i></td><td>${w}x${h}</td><td>${w / 8}x${h / 8}</td><td>${w / 16}x${h / 16}</td></tr>`
+			infoTable.innerHTML += consoles.map(c => `<tr><td>${c[0]}</td><td>${c[1]}x${c[2]}</td><td>${c[1] / 8}x${c[2] / 8}</td><td>${c[1] / 16}x${c[2] / 16}</td></tr>`).join('')
+
+			for (let r of resolutions) {
+				let x = r[0]
+				let y = r[1]
+				let p = r[2]
+
+				let s = Math.min(Math.floor(x / w), Math.floor(y / h))
+				let t = Math.min(x / w, y / h)
+
+				let sx = w * s
+				let sy = h * s
+				let mx = (x - sx) / 2
+				let my = (y - sy) / 2
+				let tx = w * t
+				let ty = h * t
+				let mtx = (x - tx) / 2
+				let mty = (y - ty) / 2
+
+				let div = r[4] ? r[4] : document.createElement('div')
+				div.title = `${x}x${y}` + (p ? ` (${p}% market share)` : '')
+				div.style.width = `${x * SCALE_FACTOR}px`
+				div.style.height = `${y * SCALE_FACTOR}px`
+				document.body.append(div)
+				r[4] = div
+
+				let span = r[5] ? r[5] : document.createElement('span')
+				span.innerHTML = `x${s} = ${sx}x${sy} (${mx}x${my} margin)`
+				if (s != t) span.innerHTML += `<br>x${clip(t)} = ${clip(tx)}x${clip(ty)} (${clip(mtx)}x${clip(mty)} margin)`
+				span.style.width = `${sx * SCALE_FACTOR}px`
+				span.style.height = `${sy * SCALE_FACTOR}px`
+				r[5] = span
+
+				let gs = s * SCALE_FACTOR * 32
+				span.style.backgroundSize = `${gs}px ${gs}px`
+				span.style.backgroundPosition = `0 0, 0 ${gs / 2}px, ${gs / 2}px -${gs / 2}px, -${gs / 2}px 0px`
+				div.append(span)
+			}
+		}
+
+		refresh()
+	</script>
+</body>
+
+</html>
