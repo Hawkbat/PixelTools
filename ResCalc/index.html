@@ -17,6 +17,12 @@
 			color: whitesmoke;
 		}
 
+		.stack {
+			flex-direction: column;
+			flex-wrap: nowrap;
+			align-items: center;
+		}
+
 		div {
 			display: flex;
 			justify-content: center;
@@ -55,7 +61,7 @@
 	</style>
 </head>
 
-<body>
+<body class="stack">
 	<section>
 		<h1>Pixel Canvas Scale Tester</h1>
 		<label>Width&nbsp;<input id="width" type="number" min="1" value="320"></label>
@@ -63,6 +69,10 @@
 		<table id="info"></table>
 		<p>Market share data is from the Steam Hardware Survey as of December 2018.</p>
 		<button onclick="changeScale(0.5)">Smaller Windows</button><button onclick="changeScale(2)">Bigger Windows</button>
+		<select id="flow">
+			<option value="stack">Stacked Windows</option>
+			<option value="">Wrapped Windows</option>
+		</select>
 	</section>
 	<script>
 		let SCALE_FACTOR = 0.25
@@ -70,6 +80,7 @@
 		let infoTable = document.getElementById('info')
 		let widthInput = document.getElementById('width')
 		let heightInput = document.getElementById('height')
+		let flowInput = document.getElementById('flow')
 
 		let resolutions = [
 			[1920, 1080, 60.74],
@@ -104,9 +115,15 @@
 
 		let w = 320
 		let h = 180
+		let flow = 'stack'
+
+		widthInput.value = localStorage.hasOwnProperty('rescalc_w') ? localStorage.getItem('rescalc_w') : w
+		heightInput.value = localStorage.hasOwnProperty('rescalc_h') ? localStorage.getItem('rescalc_h') : h
+		flowInput.value = localStorage.hasOwnProperty('rescalc_flow') ? localStorage.getItem('rescalc_flow') : flow
 
 		widthInput.addEventListener('input', e => refresh())
 		heightInput.addEventListener('input', e => refresh())
+		flowInput.addEventListener('input', e => refresh())
 
 		function changeScale(n) {
 			SCALE_FACTOR = SCALE_FACTOR * n
@@ -120,6 +137,13 @@
 		function refresh() {
 			w = parseInt(widthInput.value, 10)
 			h = parseInt(heightInput.value, 10)
+			flow = flowInput.value
+
+			localStorage.setItem('rescalc_w', w)
+			localStorage.setItem('rescalc_h', h)
+			localStorage.setItem('rescalc_flow', flow)
+
+			document.body.className = flow
 
 			infoTable.innerHTML = `<tr><th>Console</th><th>Resolution</th><th>8x8 Tiles</th><th>16x16 Tiles</th></tr>`
 			infoTable.innerHTML += `<tr><td><i>Your Canvas</i></td><td>${w}x${h}</td><td>${w / 8}x${h / 8}</td><td>${w / 16}x${h / 16}</td></tr>`
